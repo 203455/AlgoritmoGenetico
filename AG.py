@@ -13,8 +13,8 @@ class ADN:
         self.pob_ini = pob_ini
         self.pob_max = pob_max
         self.prob_cruza = prob_cruza
-        self.prob_muta = prob_muta_indi
-        self.prob_muta = prob_muta_gen
+        self.prob_muta_indi = prob_muta_indi
+        self.prob_muta_gen = prob_muta_gen
         self.val_min = val_min
         self.val_max = val_max
         self.precision = precision
@@ -64,26 +64,26 @@ class ADN:
         fitness = []	
         for i in range(len(poblacion)):
             i = self.conversionDecimal(poblacion.__getitem__(i))
-            x = a + (i[0] * delta) 
+            x = self.val_min + (i[0] * delta) 
             print(x)
             valor = (i.__getitem__(1),x,self.funcion(x),i.__getitem__(0))
             fitness.append(valor)
         return fitness
 
-    def poda(poblacion, poblacion_maxima):
+    def poda(self, poblacion, poblacion_maxima):
         if len(poblacion) > poblacion_maxima:
                 while len(poblacion) > poblacion_maxima:
                     poblacion.remove(poblacion[-1])  
         return poblacion
 
-    def insercion(poblacion, hijos):
+    def insercion(self,poblacion, hijos):
         poblacion.extend(hijos)
         return poblacion
 
     def calculoAptitudNuevo(self, genes_mut, poblacion):
         poblacion = poblacion.copy()
         x = 0.0
-        valor = self.calcularValor(self.val_min, self.val_max, self.presicion)
+        valor = self.calcularValor(self.val_min, self.val_max, self.precision)
         delta = (self.val_max - self.val_min) / self.calculoBits(valor)
         decimal = 0
         poblacion_nue = []
@@ -96,7 +96,7 @@ class ADN:
             poblacion_nue.append(gen_comp)
             decimal = 0 
         
-        poblacion_final = self.insercion(poblacion_nue, poblacion)
+        poblacion_final = self.insercion( poblacion_nue, poblacion)
         j=0
         for i in range(len(poblacion_final)):
             if (poblacion_final[j].__getitem__(1) > self.val_max or poblacion_final[j].__getitem__(1) < self.val_min):
@@ -113,12 +113,12 @@ class ADN:
         poblacion_final = []
         genes = []
         valor = self.calcularValor(self.val_min,self.val_max,self.precision)
-        for i in range(hijos):
+        for i in range(len(hijos)):
             numero_aleatorio = [np.random.rand() for i in range(self.calculoBits(valor))]
             gen = (hijos[i], numero_aleatorio)
             genes.append(gen)
             
-        for i in range(hijos):
+        for i in range(len(hijos)):
             for j in range(len(genes[i].__getitem__(1))):
                 if genes[i].__getitem__(1)[j] < probabilidad:
                     gen = list(genes[i].__getitem__(0))
@@ -135,16 +135,16 @@ class ADN:
         return poblacion_final
 
 
-    def cruza(padres,prob_cruza):
+    def cruza(self,padres,prob_cruza):
         hijos = []    
-        padre = padres._getitem(0).getitem_(0)
-        punto_cruza =int(padre._len_()/2)
+        padre = padres.__getitem__(0).__getitem__(0)
+        punto_cruza =int(padre.__len__()/2)
         probabilidad = np.random.rand()
         if probabilidad <= prob_cruza:
             for i in range(int(len(padres)-2)):
                     prim_hijo_cabeza = padre[:punto_cruza]
-                    prim_hijo_cola = padres[i+1]._getitem_(0)[punto_cruza:]
-                    seg_hijo_cabeza = padres[i+1]._getitem_(0)[:punto_cruza]
+                    prim_hijo_cola = padres[i+1].__getitem__(0)[punto_cruza:]
+                    seg_hijo_cabeza = padres[i+1].__getitem__(0)[:punto_cruza]
                     seg_hijo_cola = padre[punto_cruza:]
                     prim_hijo = prim_hijo_cabeza +""+ prim_hijo_cola
                     seg_hijo = seg_hijo_cabeza +""+ seg_hijo_cola
@@ -155,7 +155,7 @@ class ADN:
         return hijos
 
 
-    def funcion(x):
+    def funcion(self, x):
         valor = ((x*x)*(math.sin(x)))-((2*(x*x))*(math.cos(x)))
         return valor
     
@@ -302,4 +302,3 @@ if __name__ == "__main__":
     interfaz.btn_ok.clicked.connect(send)
     
     sys.exit(app.exec())  
-    
