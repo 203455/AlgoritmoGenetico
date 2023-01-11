@@ -3,7 +3,7 @@ import os
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-import random
+from random import randint
 from shutil import rmtree
 from PyQt5 import QtWidgets, uic
 
@@ -26,7 +26,7 @@ class ADN:
         self.pob_ini = pob_ini
         pass
     
-    def calculoBits(valor):
+    def calculoBits(self, valor):
         valor_bits = math.ceil(math.log(valor,2))
         return valor_bits
 
@@ -57,7 +57,7 @@ class ADN:
     def evaluoPoblacion(self, poblacion):
         x = 0.0
         valor = self.calcularValor(self.val_min, self.val_max, self.precision)
-        valor_bits = self.calculoBits
+        valor_bits = self.calculoBits(valor)
         delta = (self.val_max - self.val_min) / valor_bits
         valor = 0
         poblacion = poblacion
@@ -256,8 +256,8 @@ def send():
     
     run = True
     try:
-        pob_ini = int(interfaz.poblacion_i.text())
         pob_max = int(interfaz.poblacion_m.text())
+        pob_ini = int(randint(1, pob_max -1))
         precision = float(interfaz.presicion.text())
         prob_muta_gen = float(interfaz.pmg.text())
         prob_muta_indi = float(interfaz.pmi.text())
@@ -297,7 +297,7 @@ def send():
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    interfaz = uic.loadUi("interfaz.ui")
+    interfaz = uic.loadUi("interface.ui")
     interfaz.show()
     interfaz.btn_ok.clicked.connect(send)
     
