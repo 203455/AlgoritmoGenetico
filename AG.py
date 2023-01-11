@@ -1,14 +1,20 @@
+import sys
+import os
 import math
 import numpy as np
+import matplotlib.pyplot as plt
+import random
+from shutil import rmtree
+from PyQt5 import QtWidgets, uic
+
 
 class ADN: 
-    def __init__(self, pob_ini,pob_max, prob_cruza, prob_muta_indi, prob_muta_gen , intervalo, val_min, val_max, precision, n_generaciones, tipo_valor):
+    def __init__(self, pob_ini,pob_max, prob_cruza, prob_muta_indi, prob_muta_gen , val_min, val_max, precision, n_generaciones, tipo_valor):
         self.pob_ini = pob_ini
         self.pob_max = pob_max
         self.prob_cruza = prob_cruza
         self.prob_muta = prob_muta_indi
         self.prob_muta = prob_muta_gen
-        self.intervalo = intervalo
         self.val_min = val_min
         self.val_max = val_max
         self.precision = precision
@@ -48,12 +54,11 @@ class ADN:
             valor_decimal += int(digito_string) * 2 ** posicion
         return(valor_decimal, cadena)
 
-    def evaluoPoblacion(self, valor_min, valor_max, precision):
+    def evaluoPoblacion(self, poblacion):
         x = 0.0
-        a = valor_min
-        valor = self.calcularValor(valor_min, valor_max, precision)
+        valor = self.calcularValor(self.val_min, self.val_max, self.precision)
         valor_bits = self.calculoBits
-        delta = (valor_max - valor_min) / valor_bits
+        delta = (self.val_max - self.val_min) / valor_bits
         valor = 0
         poblacion = poblacion
         fitness = []	
@@ -153,6 +158,20 @@ class ADN:
     def funcion(x):
         valor = ((x*x)*(math.sin(x)))-((2*(x*x))*(math.cos(x)))
         return valor
+    
+    
+    def ordenarValores(self, valores, tipo_valor):
+        valores_ordenados = []
+        valores_ordenar = []
+        
+        for i in range(len(valores)):
+            valores_ordenar.append(valores.__getitem__(i).__getitem__(2))
+            
+        if tipo_valor:
+            valores_ordenados = sorted(valores_ordenar, key = lambda x:float(x), reverse=True)
+        else:
+            valores_ordenados = sorted(valores_ordenar, key = lambda x:float(x)) 
+        return valores_ordenados
 
 
     def calculoAptitud(self, tipo_valor, valor):
@@ -167,16 +186,120 @@ class ADN:
             genes_padre.pop()
         genes_padre.sort(key=lambda x: x[2], reverse=tipo_valor)      
         return genes_padre
-    
-    
 
-def obtencionDatos():
-    adn = ADN()
+
+def main(adn, interfaz):
+    poblacion = []
+    generaciones = []
+    genes_sin_poda = []
+    mejor_gen = []
+    peor_gen = []
+    promedio = []
+    
+    poblacion_generado = adn.generarPoblacion()
+    
+    poblacion = adn.evaluoPoblacion(poblacion_generado) 
+     
+    print("Poblacion inicial: (Generacion 1)",poblacion)
+    
+    for generacion in range(adn.n_generaciones):
+        fitness = adn.calculoAptitud(adn.tipo_valor,poblacion)
+        cruza = adn.cruza(fitness, adn.prob_cruza)
+        mutacion = adn.mutacion(adn.prob_muta_indi, adn.prob_muta_gen, cruza)
+        genes_sin_poda = adn.calculoAptitudNuevo(mutacion,poblacion)
+        
+        poblacion_ordenada = adn.ordenarValores(genes_sin_poda, adn.tipo_valor)
+        
+        mejor_gen.append(poblacion_ordenada[0])
+        promedio.append(np.mean(poblacion_ordenada))
+        peor_gen.append(poblacion_ordenada[-1])
+        
+        genes_sin_poda.sort(key=lambda x: float(x.__getitem__(2)), reverse=adn.tipo_valor)
+        poblacion = adn.poda(genes_sin_poda, adn.pob_max)
+        generaciones.append(poblacion)
+        
+    interfaz.estado2.setText("Mejor Gen: " + str(mejor_gen[-1]))
+    for i in range(len(generaciones)):
+        print("Generacion: ",i+1," ",generaciones[i])
+    
+    plt.plot(mejor_gen, label="Mejor individuo", color="red", linestyle="-",)
+    plt.plot(promedio, label="Promedio", color="blue", linestyle="-",)
+    plt.plot(peor_gen, label="Peor individuo", color="green", linestyle="-")
+    plt.legend()
+    os.makedirs("ag\Graficas/", exist_ok=True)
+    plt.savefig("ag\Graficas/Grafica.png")
+    plt.close()
+    
+    try:
+        rmtree("ag\Graficas\individual/")
+    except:
+        pass
+    finally:
+        os.makedirs("ag\Graficas\individual", exist_ok=True)
+    for i in range(len(generaciones)):
+        listaX = []
+        listaY = []
+        for j in range(len(generaciones[i])):
+            listaX.append(generaciones[i].__getitem__(j).__getitem__(1))
+            listaY.append(generaciones[i].__getitem__(j).__getitem__(2))
+
+        plt.title("Generacion: " + str(i+1))
+        plt.scatter(listaX, listaY)
+        plt.xlim(0,adn.val_max+1)
+        plt.ylim(-1, 5)
+        plt.savefig("ag\Graficas\individual/generado"+str(i+1)+".png")
+        plt.close()
+    print("OK")
     pass
+    
+def send():
+    
+    run = True
+    try:
+        pob_ini = int(interfaz.poblacion_i.text())
+        pob_max = int(interfaz.poblacion_m.text())
+        precision = float(interfaz.presicion.text())
+        prob_muta_gen = float(interfaz.pmg.text())
+        prob_muta_indi = float(interfaz.pmi.text())
+        prob_cruza = float(interfaz.pcruza.text())
+        val_max = int(interfaz.xmax.text())
+        val_min = int(interfaz.xmin.text())
+        tipo_valor = bool(interfaz.maximizar.isChecked())
+        n_generaciones = int(interfaz.generaciones.text())
+    
+    
+        if(pob_ini < 1 or pob_max < 1 or precision <= 0 or prob_muta_gen <= 0 or prob_muta_indi <= 0 or prob_cruza <= 0 or n_generaciones <= 1):
+            interfaz.estado.setText("Error al ingresar los datos")
+            interfaz.estado.setStyleSheet("color: red")
+            run = False
+
+        if(val_min > val_max):
+            interfaz.estado.setText("Error, el valor mínimo no puede ser mayor que el valor máximo")
+            interfaz.estado.setStyleSheet("color: red")
+            run = False
+
+        if( prob_cruza >= 1):
+            interfaz.estado.setText("Error La probabilidad debe ser menor a 1")
+            interfaz.estado.setStyleSheet("color: red")
+            run = False
+    
+    except:
+        interfaz.estado.setText("Error al ingresar los datos")
+        interfaz.estado.setStyleSheet("color: red")
+        run = False
+           
+    if(run):
+        interfaz.estado.setText("")
+        adn = ADN(pob_ini = pob_ini, pob_max = pob_max , prob_cruza = prob_cruza , prob_muta_indi = prob_muta_indi , prob_muta_gen = prob_muta_gen , val_min=val_min, val_max = val_max, precision = precision, n_generaciones = n_generaciones, tipo_valor = tipo_valor)
+        main(adn,interfaz)
+
     
 
 if __name__ == "__main__":
-    obtencionDatos()
+    app = QtWidgets.QApplication(sys.argv)
+    interfaz = uic.loadUi("interfaz.ui")
+    interfaz.show()
+    interfaz.btn_ok.clicked.connect(send)
     
-    pass  
+    sys.exit(app.exec())  
     
