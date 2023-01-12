@@ -73,7 +73,7 @@ class ADN:
     def poda(self, poblacion, poblacion_maxima):
         if len(poblacion) > poblacion_maxima:
                 while len(poblacion) > poblacion_maxima:
-                    poblacion.remove(poblacion[-1])  
+                    poblacion.pop(randint(0, len(poblacion)-1))
         return poblacion
 
     def insercion(self,poblacion, hijos):
@@ -95,7 +95,6 @@ class ADN:
             gen_comp = (genes_mut[i], x, self.funcion(x), decimal)
             poblacion_nue.append(gen_comp)
             decimal = 0 
-        
         poblacion_final = self.insercion( poblacion_nue, poblacion)
         j=0
         for i in range(len(poblacion_final)):
@@ -150,6 +149,7 @@ class ADN:
                     seg_hijo = seg_hijo_cabeza +""+ seg_hijo_cola
                     hijos.append(prim_hijo)
                     hijos.append(seg_hijo)
+
             else:
                 pass
         return hijos
@@ -184,7 +184,7 @@ class ADN:
             genes_padre.append(fitness[np.random.randint(0, len(fitness))])
         if len(genes_padre) % 2 != 0:
             genes_padre.pop()
-        genes_padre.sort(key=lambda x: x[2], reverse=tipo_valor)      
+        genes_padre.sort(key=lambda x: x[2], reverse=tipo_valor)    
         return genes_padre
 
 
@@ -245,8 +245,8 @@ def main(adn, interfaz):
 
         plt.title("Generacion: " + str(i+1))
         plt.scatter(listaX, listaY)
-        plt.xlim(0,adn.val_max+1)
-        plt.ylim(-1, 5)
+        plt.xlim(adn.val_min-1,adn.val_max+1)
+        plt.ylim(listaY[-1],listaY[0])        
         plt.savefig("ag\Graficas\individual/generado"+str(i+1)+".png")
         plt.close()
     print("OK")
