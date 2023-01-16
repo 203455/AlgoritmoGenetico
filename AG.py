@@ -65,7 +65,6 @@ class ADN:
         for i in range(len(poblacion)):
             i = self.conversionDecimal(poblacion.__getitem__(i))
             x = self.val_min + (i[0] * delta) 
-            print(x)
             valor = (i.__getitem__(1),x,self.funcion(x),i.__getitem__(0))
             fitness.append(valor)
         return fitness
@@ -118,29 +117,28 @@ class ADN:
             genes.append(gen)
             
         for i in range(len(hijos)):
-            for j in range(len(genes[i].__getitem__(1))):
+            for j in range(genes[i].__getitem__(1).__len__()): 
                 if genes[i].__getitem__(1)[j] < probabilidad:
-                    gen = list(genes[i].__getitem__(0))
-                    if gen[j] == "0":
-                        gen[j] = "1"
-                        genMutado = "".join(gen)
-                        genes[i] = (genMutado, genes[i].__getitem__(1))
-                    else:
-                        gen[j] = "0"
-                        genMutado = "".join(gen)
-                        genes[i] = (genMutado, genes[i].__getitem__(1))
+                    pos = np.random.randint(0,len(genes.__getitem__(0)))
+                    genmutar = list(genes[i].__getitem__(0))
+                    nuevogen = genmutar[pos]
+                    antgen = genmutar[j]
+                    genmutar[pos] = antgen
+                    genmutar[j] = nuevogen
+                    genes[i] = (''.join(genmutar),genes[i].__getitem__(1))
         for i in range(genes.__len__()):            
             poblacion_final.append(genes[i].__getitem__(0))
+
         return poblacion_final
 
 
     def cruza(self,padres,prob_cruza):
         hijos = []    
         padre = padres.__getitem__(0).__getitem__(0)
-        punto_cruza =int(padre.__len__()/2)
         probabilidad = np.random.rand()
         if probabilidad <= prob_cruza:
             for i in range(int(len(padres)-2)):
+                    punto_cruza =int(np.random.randint(0,len(padres)-1))
                     prim_hijo_cabeza = padre[:punto_cruza]
                     prim_hijo_cola = padres[i+1].__getitem__(0)[punto_cruza:]
                     seg_hijo_cabeza = padres[i+1].__getitem__(0)[:punto_cruza]
@@ -149,14 +147,13 @@ class ADN:
                     seg_hijo = seg_hijo_cabeza +""+ seg_hijo_cola
                     hijos.append(prim_hijo)
                     hijos.append(seg_hijo)
-
             else:
                 pass
         return hijos
 
 
     def funcion(self, x):
-        valor = ((x*x)*(math.sin(x)))-((2*(x*x))*(math.cos(x)))
+        valor = (((x**2)*(math.sin(x)))-((2*(x*x))*(math.cos(x))))
         return valor
     
     
@@ -174,17 +171,22 @@ class ADN:
         return valores_ordenados
 
 
-    def calculoAptitud(self, tipo_valor, valor):
-        fitness = valor.copy()
+    def calculoAptitud(self, tipo_valor, poblacion):
+        fitness = []
         genes_padre = []
-        fitness.sort(key=lambda x: x[2], reverse=tipo_valor)
-        for i in range(int(len(fitness)/2)):
-            fitness.pop()
-        for i in range(int(len(fitness))):
-            genes_padre.append(fitness[np.random.randint(0, len(fitness))])
+        suma = 0.0
+        for i in range(len(poblacion)):
+            objeto = [i, poblacion[i][2]]
+            print(poblacion[i][1],poblacion[i][2])
+            fitness.append(objeto)
+            suma = suma + poblacion[i][2] 
+        for i in range(len(fitness)):
+            fitness[i][1] = (fitness[i][1]/suma) 
+        fitness.sort(key= lambda x: x[1], reverse=tipo_valor)
+        for i in range(int(len(fitness)/2)): 
+            genes_padre.append(poblacion[fitness[np.random.randint(0, int(len(fitness)/2))][0]])
         if len(genes_padre) % 2 != 0:
             genes_padre.pop()
-        genes_padre.sort(key=lambda x: x[2], reverse=tipo_valor)    
         return genes_padre
 
 
@@ -200,7 +202,7 @@ def main(adn, interfaz):
     
     poblacion = adn.evaluoPoblacion(poblacion_generado) 
      
-    print("Poblacion inicial: (Generacion 1)",poblacion)
+    #print("Poblacion inicial: (Generacion 1)",poblacion)
     
     for generacion in range(adn.n_generaciones):
         fitness = adn.calculoAptitud(adn.tipo_valor,poblacion)
@@ -219,8 +221,6 @@ def main(adn, interfaz):
         generaciones.append(poblacion)
         
     interfaz.estado2.setText("Mejor Gen: " + str(mejor_gen[-1]))
-    for i in range(len(generaciones)):
-        print("Generacion: ",i+1," ",generaciones[i])
     
     plt.plot(mejor_gen, label="Mejor individuo", color="red", linestyle="-",)
     plt.plot(promedio, label="Promedio", color="blue", linestyle="-",)
@@ -249,7 +249,6 @@ def main(adn, interfaz):
         plt.ylim(listaY[-1],listaY[0])        
         plt.savefig("ag\Graficas\individual/generado"+str(i+1)+".png")
         plt.close()
-    print("OK")
     pass
     
 def send():
